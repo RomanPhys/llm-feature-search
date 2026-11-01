@@ -1,0 +1,534 @@
+{
+ "meta": {
+  "model": "Claude (Anthropic)",
+  "how": "один запрос без обратной связи, промпт в llm/prompt.md",
+  "task": "Предсказать, уйдёт ли клиент из банка (Rosbank churn, target_flag), по истории карточных транзакций",
+  "what_the_model_saw": "только описание задачи и схему полей, без транзакций и без меток",
+  "n_requested": 40
+ },
+ "mcc_groups": {
+  "groceries": [
+   5411,
+   5422,
+   5441,
+   5451,
+   5462,
+   5499,
+   5331
+  ],
+  "restaurants": [
+   5812,
+   5813,
+   5814
+  ],
+  "cash_atm": [
+   6010,
+   6011
+  ],
+  "transfers": [
+   4829,
+   6012,
+   6051,
+   6540
+  ],
+  "telecom_utilities": [
+   4812,
+   4814,
+   4816,
+   4899,
+   4900
+  ],
+  "digital_services": [
+   5815,
+   5816,
+   5817,
+   5818,
+   5968
+  ],
+  "transport": [
+   4111,
+   4112,
+   4121,
+   4131,
+   4784
+  ],
+  "fuel_auto": [
+   5541,
+   5542,
+   5533,
+   5532,
+   5511,
+   7538,
+   7523
+  ],
+  "medical": [
+   5912,
+   5122,
+   5047,
+   8011,
+   8021,
+   8043,
+   8062,
+   8071,
+   8099
+  ],
+  "travel": [
+   "3000-3299",
+   "3351-3441",
+   "3501-3999",
+   4411,
+   4511,
+   4722,
+   7011,
+   7512
+  ],
+  "clothing_shopping": [
+   5310,
+   5311,
+   5399,
+   5651,
+   5661,
+   5691,
+   5699
+  ],
+  "electronics_home": [
+   5200,
+   5211,
+   5251,
+   5712,
+   5719,
+   5722,
+   5732
+  ],
+  "kids_education": [
+   5641,
+   5945,
+   8211,
+   8220,
+   8299
+  ],
+  "beauty": [
+   5977,
+   7230,
+   7298
+  ],
+  "entertainment": [
+   7832,
+   7922,
+   7996,
+   7997,
+   7999
+  ],
+  "gambling": [
+   7800,
+   7801,
+   7802,
+   7995
+  ],
+  "government": [
+   9222,
+   9311,
+   9399
+  ]
+ },
+ "features": [
+  {
+   "name": "activity_trend_30_180",
+   "agg": "count",
+   "window": 30,
+   "norm": "ratio_to_longer",
+   "norm_window": 180,
+   "rationale": "уходящий клиент постепенно перестаёт пользоваться картой"
+  },
+  {
+   "name": "activity_trend_7_90",
+   "agg": "count",
+   "window": 7,
+   "norm": "ratio_to_longer",
+   "norm_window": 90,
+   "rationale": "самый свежий спад активности"
+  },
+  {
+   "name": "spend_trend_30_180",
+   "agg": "sum",
+   "value": "amount",
+   "window": 30,
+   "norm": "ratio_to_longer",
+   "norm_window": 180,
+   "rationale": "падение оборота по карте"
+  },
+  {
+   "name": "days_since_last_any",
+   "agg": "days_since_last",
+   "window": null,
+   "rationale": "давно не было операций"
+  },
+  {
+   "name": "active_days_trend",
+   "agg": "active_days",
+   "window": 30,
+   "norm": "ratio_to_longer",
+   "norm_window": 90,
+   "rationale": "реже пользуется картой, даже если суммы прежние"
+  },
+  {
+   "name": "grocery_days_since",
+   "agg": "days_since_last",
+   "window": null,
+   "filter": {
+    "mcc_group": "groceries"
+   },
+   "rationale": "продукты покупают постоянно; если перестал платить этой картой, основная карта, скорее всего, уже другая"
+  },
+  {
+   "name": "grocery_share_90",
+   "agg": "count",
+   "window": 90,
+   "filter": {
+    "mcc_group": "groceries"
+   },
+   "norm": "share_of_total",
+   "rationale": "доля повседневных трат показывает, основная ли это карта"
+  },
+  {
+   "name": "grocery_trend_30_180",
+   "agg": "count",
+   "window": 30,
+   "filter": {
+    "mcc_group": "groceries"
+   },
+   "norm": "ratio_to_longer",
+   "norm_window": 180,
+   "rationale": "спад именно повседневных покупок"
+  },
+  {
+   "name": "cash_share_30",
+   "agg": "count",
+   "window": 30,
+   "filter": {
+    "mcc_group": "cash_atm"
+   },
+   "norm": "share_of_total",
+   "rationale": "перед уходом деньги снимают наличными"
+  },
+  {
+   "name": "cash_trend_30_180",
+   "agg": "sum",
+   "value": "amount",
+   "window": 30,
+   "filter": {
+    "mcc_group": "cash_atm"
+   },
+   "norm": "ratio_to_longer",
+   "norm_window": 180,
+   "rationale": "рост снятий за последний месяц"
+  },
+  {
+   "name": "transfers_share_sum_30",
+   "agg": "sum",
+   "value": "amount",
+   "window": 30,
+   "filter": {
+    "mcc_group": "transfers"
+   },
+   "norm": "share_of_total",
+   "rationale": "перевод денег в другой банк"
+  },
+  {
+   "name": "transfers_trend",
+   "agg": "count",
+   "window": 30,
+   "filter": {
+    "mcc_group": "transfers"
+   },
+   "norm": "ratio_to_longer",
+   "norm_window": 180,
+   "rationale": "переводов стало больше обычного"
+  },
+  {
+   "name": "c2c_out_share_90",
+   "agg": "count",
+   "window": 90,
+   "filter": {
+    "trx_category": [
+     "C2C_OUT"
+    ]
+   },
+   "norm": "share_of_total",
+   "rationale": "исходящие переводы с карты на карту"
+  },
+  {
+   "name": "c2c_out_trend",
+   "agg": "sum",
+   "value": "amount",
+   "window": 30,
+   "filter": {
+    "trx_category": [
+     "C2C_OUT"
+    ]
+   },
+   "norm": "ratio_to_longer",
+   "norm_window": 180,
+   "rationale": "вывод денег за последний месяц"
+  },
+  {
+   "name": "deposit_days_since",
+   "agg": "days_since_last",
+   "window": null,
+   "filter": {
+    "trx_category": [
+     "DEPOSIT"
+    ]
+   },
+   "rationale": "перестали поступать деньги на карту, например зарплата"
+  },
+  {
+   "name": "deposit_trend",
+   "agg": "sum",
+   "value": "amount",
+   "window": 90,
+   "filter": {
+    "trx_category": [
+     "DEPOSIT"
+    ]
+   },
+   "norm": "ratio_to_longer",
+   "norm_window": null,
+   "rationale": "пополнения уменьшились"
+  },
+  {
+   "name": "bills_days_since",
+   "agg": "days_since_last",
+   "window": null,
+   "filter": {
+    "mcc_group": "telecom_utilities"
+   },
+   "rationale": "регулярные платежи переносят на карту нового банка"
+  },
+  {
+   "name": "bills_trend",
+   "agg": "count",
+   "window": 90,
+   "filter": {
+    "mcc_group": "telecom_utilities"
+   },
+   "norm": "ratio_to_longer",
+   "norm_window": 180,
+   "rationale": "регулярные платежи прекратились"
+  },
+  {
+   "name": "restaurants_share_sum_90",
+   "agg": "sum",
+   "value": "amount",
+   "window": 90,
+   "filter": {
+    "mcc_group": "restaurants"
+   },
+   "norm": "share_of_total",
+   "rationale": "образ жизни и вовлечённость в использование карты"
+  },
+  {
+   "name": "transport_days_since",
+   "agg": "days_since_last",
+   "window": null,
+   "filter": {
+    "mcc_group": "transport"
+   },
+   "rationale": "ежедневные поездки тоже переносят на основную карту"
+  },
+  {
+   "name": "fuel_share_180",
+   "agg": "count",
+   "window": 180,
+   "filter": {
+    "mcc_group": "fuel_auto"
+   },
+   "norm": "share_of_total",
+   "rationale": "автомобилисты как отдельный сегмент"
+  },
+  {
+   "name": "diversity_trend",
+   "agg": "nunique_mcc",
+   "window": 30,
+   "norm": "ratio_to_longer",
+   "norm_window": 180,
+   "rationale": "карта используется для всё более узкого круга покупок"
+  },
+  {
+   "name": "diversity_90",
+   "agg": "nunique_mcc",
+   "window": 90,
+   "rationale": "широта использования карты"
+  },
+  {
+   "name": "mean_check_trend",
+   "agg": "mean",
+   "value": "amount",
+   "window": 30,
+   "norm": "ratio_to_longer",
+   "norm_window": null,
+   "rationale": "изменение среднего чека"
+  },
+  {
+   "name": "max_check_30",
+   "agg": "max",
+   "value": "log_amount",
+   "window": 30,
+   "rationale": "крупная разовая операция перед уходом"
+  },
+  {
+   "name": "std_log_90",
+   "agg": "std",
+   "value": "log_amount",
+   "window": 90,
+   "rationale": "разнообразие сумм"
+  },
+  {
+   "name": "digital_share_90",
+   "agg": "count",
+   "window": 90,
+   "filter": {
+    "mcc_group": "digital_services"
+   },
+   "norm": "share_of_total",
+   "rationale": "подписки привязаны к карте и удерживают клиента"
+  },
+  {
+   "name": "medical_share_180",
+   "agg": "count",
+   "window": 180,
+   "filter": {
+    "mcc_group": "medical"
+   },
+   "norm": "share_of_total",
+   "rationale": "косвенный признак возраста клиента"
+  },
+  {
+   "name": "travel_share_sum_all",
+   "agg": "sum",
+   "value": "amount",
+   "window": null,
+   "filter": {
+    "mcc_group": "travel"
+   },
+   "norm": "share_of_total",
+   "rationale": "путешественники ценят условия карты за рубежом"
+  },
+  {
+   "name": "shopping_trend",
+   "agg": "sum",
+   "value": "amount",
+   "window": 30,
+   "filter": {
+    "mcc_group": "clothing_shopping"
+   },
+   "norm": "ratio_to_longer",
+   "norm_window": 180,
+   "rationale": "спад необязательных трат"
+  },
+  {
+   "name": "electronics_max_90",
+   "agg": "max",
+   "value": "amount",
+   "window": 90,
+   "filter": {
+    "mcc_group": "electronics_home"
+   },
+   "rationale": "крупные покупки, возможно в рассрочку"
+  },
+  {
+   "name": "kids_share_all",
+   "agg": "count",
+   "window": null,
+   "filter": {
+    "mcc_group": "kids_education"
+   },
+   "norm": "share_of_total",
+   "rationale": "семейные клиенты уходят реже"
+  },
+  {
+   "name": "gambling_sum_180",
+   "agg": "sum",
+   "value": "amount",
+   "window": 180,
+   "filter": {
+    "mcc_group": "gambling"
+   },
+   "rationale": "рискованное поведение"
+  },
+  {
+   "name": "government_count_all",
+   "agg": "count",
+   "window": null,
+   "filter": {
+    "mcc_group": "government"
+   },
+   "rationale": "налоги и госуслуги платят основной картой"
+  },
+  {
+   "name": "beauty_share_180",
+   "agg": "count",
+   "window": 180,
+   "filter": {
+    "mcc_group": "beauty"
+   },
+   "norm": "share_of_total",
+   "rationale": "регулярные личные траты"
+  },
+  {
+   "name": "entertainment_trend",
+   "agg": "count",
+   "window": 30,
+   "filter": {
+    "mcc_group": "entertainment"
+   },
+   "norm": "ratio_to_longer",
+   "norm_window": 180,
+   "rationale": "спад досуговых трат"
+  },
+  {
+   "name": "refunds_share_180",
+   "agg": "count",
+   "window": 180,
+   "filter": {
+    "trx_category": [
+     "BACK_TRX"
+    ]
+   },
+   "norm": "share_of_total",
+   "rationale": "возвраты и спорные операции"
+  },
+  {
+   "name": "other_atm_share_90",
+   "agg": "count",
+   "window": 90,
+   "filter": {
+    "trx_category": [
+     "WD_ATM_PARTNER",
+     "WD_ATM_OTHER"
+    ]
+   },
+   "norm": "share_of_total",
+   "rationale": "снятие в чужих банкоматах"
+  },
+  {
+   "name": "pos_trend_7_30",
+   "agg": "count",
+   "window": 7,
+   "filter": {
+    "trx_category": [
+     "POS"
+    ]
+   },
+   "norm": "ratio_to_longer",
+   "norm_window": 30,
+   "rationale": "покупки по карте за последнюю неделю"
+  },
+  {
+   "name": "active_days_7",
+   "agg": "active_days",
+   "window": 7,
+   "rationale": "пользовался ли картой на этой неделе"
+  }
+ ]
+}

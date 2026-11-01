@@ -1,0 +1,7 @@
+numpy
+pandas
+scikit-learn
+lightgbm
+matplotlib
+huggingface_hub
+openai  # только для перегенерации предложений через API
